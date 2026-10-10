@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Per Angelo</title>
+<meta name="theme-color" content="#07060f">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============ À PERSONNALISER (ou via l'URL : ?n=Prénom&de=La%20team) ============ */
+:root{
+  --bg:#07060f; --ink:#f6f1ff; --muted:#a59cc0; --gold:#ffd27a; --pink:#ff6fb5; --violet:#8b7bff;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;overflow:hidden}
+canvas#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+#stars{position:fixed;inset:0;z-index:0;background:
+  radial-gradient(1200px 600px at 50% 110%,#2a1650 0%,transparent 60%),
+  radial-gradient(800px 500px at 10% -10%,#1b1440 0%,transparent 60%),var(--bg)}
+.scene{position:fixed;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px 20px calc(24px + env(safe-area-inset-bottom));text-align:center;opacity:0;pointer-events:none;
+  transform:translateY(16px);transition:opacity .9s ease,transform .9s ease}
+.scene.on{opacity:1;pointer-events:auto;transform:none}
+.tag{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);border:1px solid #ffd27a44;
+  padding:7px 14px;border-radius:99px;margin-bottom:28px;background:#ffd27a0d}
+h1,h2{font-family:Fraunces,serif;font-weight:300;line-height:1.05;letter-spacing:-.02em}
+h1{font-size:clamp(40px,12vw,92px)}
+h2{font-size:clamp(28px,8vw,52px)}
+em{font-style:italic;font-weight:400;background:linear-gradient(90deg,var(--gold),var(--pink),var(--violet));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+p.sub{color:var(--muted);font-size:16px;line-height:1.55;max-width:34ch;margin:18px auto 0}
+.btn{margin-top:36px;font:600 16px Inter,sans-serif;color:#120b22;background:linear-gradient(135deg,var(--gold),#ffb36b);
+  border:0;border-radius:99px;padding:17px 30px;cursor:pointer;box-shadow:0 10px 40px #ffb36b44,inset 0 1px 0 #fff8;
+  transition:transform .15s}
+.btn:active{transform:scale(.96)}
+.btn.ghost{background:transparent;color:var(--muted);box-shadow:none;border:1px solid #ffffff22;font-weight:500;font-size:14px;padding:12px 22px;margin-top:14px}
+
+/* --- Scène 1 : enveloppe / sceau --- */
+.seal{width:120px;height:120px;border-radius:50%;margin:0 auto 30px;position:relative;cursor:pointer;
+  background:radial-gradient(circle at 35% 30%,#ff8fc4,#c2185b 60%,#7a0f3b);box-shadow:0 0 0 8px #c2185b22,0 20px 60px #c2185b66;
+  display:grid;place-items:center;font-family:Fraunces,serif;font-size:44px;color:#ffe3f0;animation:pulse 2.4s ease-in-out infinite}
+.seal::after{content:"";position:absolute;inset:-14px;border-radius:50%;border:1px dashed #ff8fc455;animation:spin 18s linear infinite}
+@keyframes pulse{50%{transform:scale(1.06)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* --- Scène 2 : code --- */
+.dots{display:flex;gap:12px;justify-content:center;margin:30px 0 8px}
+.dots span{width:44px;height:56px;border-radius:12px;border:1px solid #ffffff22;background:#ffffff08;
+  display:grid;place-items:center;font:600 24px Inter;transition:.2s}
+.dots span.f{border-color:var(--gold);color:var(--gold);background:#ffd27a12}
+.dots.bad{animation:shake .4s}
+@keyframes shake{25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
+.pad{display:grid;grid-template-columns:repeat(3,72px);gap:12px;justify-content:center;margin-top:18px}
+.pad button{height:62px;border-radius:18px;border:1px solid #ffffff14;background:#ffffff0a;color:var(--ink);
+  font:500 24px Inter;cursor:pointer}
+.pad button:active{background:#ffffff22}
+.hint{font-size:13px;color:var(--muted);margin-top:16px;min-height:20px}
+
+/* --- Scène 3 : gâteau --- */
+.cake{position:relative;width:240px;height:220px;margin:34px auto 0}
+.layer{position:absolute;left:50%;transform:translateX(-50%);border-radius:14px}
+.l1{bottom:0;width:240px;height:70px;background:linear-gradient(#ff8fc4,#d94a8c)}
+.l2{bottom:62px;width:190px;height:62px;background:linear-gradient(#fff1d6,#f3c98b)}
+.drip{position:absolute;bottom:112px;left:50%;transform:translateX(-50%);width:196px;height:22px;border-radius:12px 12px 16px 16px;background:#fff}
+.plate{position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);width:280px;height:16px;border-radius:50%;background:#ffffff18}
+.candles{position:absolute;bottom:128px;left:50%;transform:translateX(-50%);display:flex;gap:18px}
+.candle{width:12px;height:52px;border-radius:4px;position:relative;cursor:pointer;
+  background:repeating-linear-gradient(-45deg,#fff 0 6px,var(--violet) 6px 12px)}
+.flame{position:absolute;left:50%;bottom:54px;width:16px;height:28px;margin-left:-8px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;
+  background:radial-gradient(ellipse at 50% 75%,#fff 0 18%,#ffe27a 30%,#ff9a3c 60%,transparent 72%);
+  filter:drop-shadow(0 0 12px #ffb347);animation:flick .12s infinite alternate;transform-origin:50% 100%;transition:opacity .3s,transform .3s}
+.candle.out .flame{opacity:0;transform:scaleY(.2)}
+.smoke{position:absolute;left:50%;bottom:56px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#ffffff55;opacity:0}
+.candle.out .smoke{animation:smoke 1.6s ease-out forwards}
+@keyframes flick{to{transform:scaleY(1.08) skewX(2deg)}}
+@keyframes smoke{0%{opacity:.7}100%{opacity:0;transform:translate(8px,-60px) scale(5)}}
+.mic{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:30px}
+.meter{width:90px;height:6px;border-radius:9px;background:#ffffff14;overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--pink))}
+
+/* --- Scène 4 : final --- */
+#final h1{margin-top:6px}
+.age{font-family:Fraunces,serif;font-size:15px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold)}
+.letter{margin:26px auto 0;max-width:38ch;font-family:Fraunces,serif;font-style:italic;font-size:19px;line-height:1.6;color:#e9e2ff;min-height:6em}
+.sign{margin-top:18px;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);opacity:0;transition:opacity 1s}
+.sign.on{opacity:1}
+.tr{display:block;font-family:Inter,sans-serif;font-style:normal;font-size:13px;line-height:1.5;color:var(--muted);margin-top:6px;opacity:.85}
+.tr b{font-weight:500;color:#cfc7e8}
+.inner{margin:auto 0;width:100%}
+#final{justify-content:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.letter.small{font-size:15px;color:#bdb3dc;min-height:0;opacity:0;transition:opacity 1.2s}
+.letter.small.on{opacity:1}
+.lang{display:block;font:600 10px Inter;letter-spacing:.3em;color:var(--gold);margin-bottom:6px;font-style:normal}
+.hint{min-height:62px}
+</style>
+</head>
+<body>
+<div id="stars"></div>
+<canvas id="fx"></canvas>
+
+<!-- 1. Le sceau -->
+<section class="scene on" id="s1">
+  <div class="tag">Messaggio riservato</div>
+  <div class="seal" id="seal">✦</div>
+  <h2>Questo messaggio è<br>riservato ad <em class="nm">Angelo</em>.</h2>
+  <p class="sub">Tocca il sigillo per aprirlo.
+    <span class="tr">🇫🇷 Ce message est réservé à Angelo. Touche le sceau pour l'ouvrir.</span>
+    <span class="tr">🇬🇧 This message is just for Angelo. Tap the seal to open it.</span></p>
+</section>
+
+<!-- 2. Le code -->
+<section class="scene" id="s2">
+  <div class="tag">Verifica d'identità</div>
+  <h2>Quanti anni <em>compi?</em></h2>
+  <p class="sub"><span class="tr">🇫🇷 Quel âge as-tu aujourd'hui ?</span><span class="tr">🇬🇧 How old are you turning?</span></p>
+  <div class="dots" id="dots"></div>
+  <div class="pad" id="pad"></div>
+  <div class="hint" id="hint"></div>
+</section>
+
+<!-- 3. Le gâteau -->
+<section class="scene" id="s3">
+  <div class="tag">Ultimo passo</div>
+  <h2>Esprimi un desiderio…<br><em>poi soffia.</em></h2>
+  <p class="sub" style="margin-top:10px"><span class="tr">🇫🇷 Fais un vœu… puis souffle. · 🇬🇧 Make a wish… then blow.</span></p>
+  <div class="cake">
+    <div class="plate"></div><div class="layer l1"></div><div class="layer l2"></div><div class="drip"></div>
+    <div class="candles" id="candles"></div>
+  </div>
+  <div class="mic" id="mic">Soffia sul telefono o tocca le candeline <span class="meter"><i id="lvl"></i></span></div>
+</section>
+
+<!-- 4. Le final -->
+<section class="scene" id="final"><div class="inner">
+  <div class="age" id="ageLine"></div>
+  <h1>Buon<br><em>compleanno</em><br><span class="nm">Angelo</span></h1>
+  <p class="sub" style="margin-top:12px">Joyeux anniversaire · Happy birthday</p>
+  <p class="letter" id="letter"></p>
+  <p class="letter small" id="fr"><span class="lang">FRANÇAIS</span></p>
+  <p class="letter small" id="en"><span class="lang">ENGLISH</span></p>
+  <div class="sign" id="sign"></div>
+  <button class="btn ghost" id="again">✦ Ancora fuochi d'artificio</button>
+</div></section>
+
+<script>
+/* ===================== CONFIG — modifie ici ===================== */
+const CONFIG = {
+  name: "Angelo",
+  age: 60,
+  from: "Con affetto · Vanja, Ubi, Hugo, Spaghetti, Mona-Lisa e Charlie",
+  code: "60",               // réponse à "Quanti anni compi?"
+  candles: 6,
+  message: "Caro Angelo, 60 anni e non li dimostri nemmeno un po'! Grazie per la tua gentilezza, il tuo sorriso e tutti i bei momenti passati insieme. Che questo nuovo capitolo ti porti salute, gioia e tante avventure. Tanti auguri!",
+  fr: "Cher Angelo, 60 ans et tu ne les fais pas du tout ! Merci pour ta gentillesse, ton sourire et tous les beaux moments passés ensemble. Que ce nouveau chapitre t'apporte santé, joie et plein d'aventures. Joyeux anniversaire !",
+  en: "Dear Angelo, 60 years and you don't look it one bit! Thank you for your kindness, your smile and all the great moments we've shared. May this new chapter bring you health, joy and lots of adventures. Happy birthday!"
+};
+/* ================================================================ */
+
+const $ = s => document.querySelector(s);
+document.querySelectorAll(".nm").forEach(e => e.textContent = CONFIG.name);
+
+const vibe = p => navigator.vibrate && navigator.vibrate(p);
+
+function go(id){
+  document.querySelectorAll(".scene").forEach(s => s.classList.remove("on"));
+  setTimeout(() => $(id).classList.add("on"), 250);
+}
+
+/* ---------- FX canvas : étoiles, confettis, feux d'artifice ---------- */
+const cv = $("#fx"), cx = cv.getContext("2d");
+let W, H, DPR = Math.min(devicePixelRatio || 1, 2);
+const stars = [], parts = [], rockets = [];
+function resize(){ W = innerWidth; H = innerHeight; cv.width = W*DPR; cv.height = H*DPR; cx.setTransform(DPR,0,0,DPR,0,0); }
+addEventListener("resize", resize); resize();
+for (let i=0;i<140;i++) stars.push({x:Math.random(),y:Math.random(),r:Math.random()*1.3+.2,t:Math.random()*6});
+const COLORS = ["#ffd27a","#ff6fb5","#8b7bff","#7ff0d4","#ffffff","#ff9a3c"];
+
+function burst(x,y,n=90,col){
+  const c = col || COLORS[Math.random()*COLORS.length|0];
+  for (let i=0;i<n;i++){
+    const a = Math.random()*Math.PI*2, s = Math.random()*5+1.5;
+    parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1,c,sz:Math.random()*2+1,g:.05,type:"spark"});
+  }
+}
+function confetti(n=160){
+  for (let i=0;i<n;i++) parts.push({x:Math.random()*W,y:-20-Math.random()*H*.5,vx:(Math.random()-.5)*2,vy:Math.random()*2+2,
+    life:1.6,c:COLORS[Math.random()*COLORS.length|0],sz:Math.random()*6+4,rot:Math.random()*6,vr:(Math.random()-.5)*.3,g:.02,type:"conf"});
+}
+function rocket(){ rockets.push({x:W*(.15+Math.random()*.7),y:H,vy:-(Math.random()*3+9),tY:H*(.15+Math.random()*.3)}); }
+let show = 0;
+function fireworks(sec=7){ show = performance.now() + sec*1000; confetti(); }
+
+function loop(t){
+  cx.clearRect(0,0,W,H);
+  for (const s of stars){ cx.globalAlpha = .35+.35*Math.sin(t/900+s.t); cx.fillStyle="#fff";
+    cx.beginPath(); cx.arc(s.x*W,s.y*H,s.r,0,7); cx.fill(); }
+  if (t < show && Math.random() < .06) rocket();
+  for (let i=rockets.length-1;i>=0;i--){ const r=rockets[i]; r.y+=r.vy; r.vy*=.985;
+    cx.globalAlpha=1; cx.fillStyle="#ffe9b0"; cx.beginPath(); cx.arc(r.x,r.y,2,0,7); cx.fill();
+    if (r.y<=r.tY || r.vy>-2){ burst(r.x,r.y,110); rockets.splice(i,1); } }
+  for (let i=parts.length-1;i>=0;i--){ const p=parts[i];
+    p.vy+=p.g; p.x+=p.vx; p.y+=p.vy;
+    if (p.type==="spark"){ p.vx*=.98; p.vy*=.98; p.life-=.012; cx.globalAlpha=Math.max(p.life,0); cx.fillStyle=p.c;
+      cx.beginPath(); cx.arc(p.x,p.y,p.sz,0,7); cx.fill(); }
+    else { p.rot+=p.vr; p.life-=.004; cx.globalAlpha=Math.min(1,p.life); cx.save(); cx.translate(p.x,p.y); cx.rotate(p.rot);
+      cx.fillStyle=p.c; cx.fillRect(-p.sz/2,-p.sz/4,p.sz,p.sz/2); cx.restore(); }
+    if (p.life<=0 || p.y>H+30) parts.splice(i,1); }
+  cx.globalAlpha=1; requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* ---------- 1. Sceau ---------- */
+$("#seal").onclick = e => { vibe(30); burst(innerWidth/2, $("#seal").getBoundingClientRect().top+60, 70, "#ff8fc4"); go("#s2"); };
+
+/* ---------- 2. Code ---------- */
+const L = CONFIG.code.length; let entry = "", tries = 0;
+const dots = $("#dots"); dots.innerHTML = "<span></span>".repeat(L);
+const pad = $("#pad");
+["1","2","3","4","5","6","7","8","9","⌫","0","✓"].forEach(k => {
+  const b = document.createElement("button"); b.textContent = k; b.onclick = () => press(k); pad.appendChild(b);
+});
+function paint(){ [...dots.children].forEach((s,i)=>{ s.textContent = entry[i]||""; s.classList.toggle("f", i<entry.length); }); }
+function press(k){
+  vibe(8);
+  if (k==="⌫") entry = entry.slice(0,-1);
+  else if (k==="✓") return check();
+  else if (entry.length < L) entry += k;
+  paint(); if (entry.length===L) setTimeout(check, 200);
+}
+function check(){
+  if (entry === CONFIG.code){ vibe([20,40,20]); $("#hint").innerHTML = "Accesso consentito ✓<span class=tr>Accès autorisé · Access granted</span>"; burst(W/2,H/2,120,"#7ff0d4"); setTimeout(()=>go("#s3"),700); startCake(); return; }
+  tries++; dots.classList.remove("bad"); void dots.offsetWidth; dots.classList.add("bad"); vibe([60,40,60]);
+  const lines = [["Sbagliato! Riprova 😏","Raté ! Réessaie","Wrong! Try again"],
+    ["Ancora no… non ti ricordi la tua età? 😄","Toujours pas… tu as oublié ton âge ?","Still no… forgot your own age?"],
+    ["Indizio: inizia con 6…","Indice : ça commence par 6…","Hint: it starts with 6…"],
+    ["È 60! Ti vogliamo bene lo stesso ❤️","C'est 60 ! On t'aime quand même","It's 60! We love you anyway"]];
+  const l = lines[Math.min(tries-1, lines.length-1)];
+  $("#hint").innerHTML = l[0] + "<span class=tr>" + l[1] + " · " + l[2] + "</span>";
+  entry = ""; setTimeout(paint, 400);
+}
+
+/* ---------- 3. Gâteau + détection du souffle ---------- */
+const candlesEl = $("#candles");
+for (let i=0;i<CONFIG.candles;i++){
+  const c = document.createElement("div"); c.className="candle"; c.innerHTML='<div class="flame"></div><div class="smoke"></div>';
+  c.onclick = () => blow(c); candlesEl.appendChild(c);
+}
+function blow(c){
+  if (!c || c.classList.contains("out")) return; c.classList.add("out"); vibe(15);
+  if (!candlesEl.querySelector(".candle:not(.out)")) setTimeout(finale, 900);
+}
+let micStream;
+async function startCake(){
+  try{
+    micStream = await navigator.mediaDevices.getUserMedia({audio:true});
+    const ac = new (window.AudioContext||window.webkitAudioContext)(), an = ac.createAnalyser();
+    an.fftSize = 512; ac.createMediaStreamSource(micStream).connect(an);
+    const buf = new Uint8Array(an.frequencyBinCount); let hold = 0;
+    (function tick(){
+      if (!micStream) return;
+      an.getByteFrequencyData(buf);
+      let s=0; for (let i=1;i<24;i++) s+=buf[i]; const v = s/23/255; // basses fréquences = souffle
+      $("#lvl").style.width = Math.min(100, v*160) + "%";
+      if (v > .45){ if (++hold % 8 === 0) blow(candlesEl.querySelector(".candle:not(.out)")); } else hold = 0;
+      requestAnimationFrame(tick);
+    })();
+  }catch(e){ $("#mic").innerHTML = "Tocca le candeline per spegnerle 🕯️"; }
+}
+
+/* ---------- 4. Final ---------- */
+function finale(){
+  if (micStream){ micStream.getTracks().forEach(t=>t.stop()); micStream = null; }
+  vibe([30,60,30,60,200]);
+  $("#ageLine").textContent = CONFIG.age + " anni ✦ " + new Date().getFullYear();
+  $("#fr").insertAdjacentText("beforeend", CONFIG.fr); $("#en").insertAdjacentText("beforeend", CONFIG.en);
+  go("#final"); fireworks(9);
+  const txt = CONFIG.message, el = $("#letter"); let i = 0;
+  setTimeout(function type(){ el.textContent = txt.slice(0, ++i); if (i < txt.length) setTimeout(type, txt[i-1]==="."?260:28);
+    else { ["#fr","#en","#sign"].forEach((id,k)=>setTimeout(()=>$(id).classList.add("on"), 400+k*900)); $("#sign").textContent = CONFIG.from; } }, 1600);
+}
+$("#again").onclick = () => fireworks(6);
+</script>
+</body>
+</html>
