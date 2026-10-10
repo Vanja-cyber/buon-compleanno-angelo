@@ -87,6 +87,8 @@ p.sub{color:var(--muted);font-size:16px;line-height:1.55;max-width:34ch;margin:1
 .tr{display:block;font-family:Inter,sans-serif;font-style:normal;font-size:13px;line-height:1.5;color:var(--muted);margin-top:6px;opacity:.85}
 .tr b{font-weight:500;color:#cfc7e8}
 .inner{margin:auto 0;width:100%}
+#three{width:100%;height:34vh;min-height:220px;margin:-8px 0 4px;cursor:grab;touch-action:pan-y}
+#three canvas{display:block}
 #final{justify-content:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .letter.small{font-size:15px;color:#bdb3dc;min-height:0;opacity:0;transition:opacity 1.2s}
 .letter.small.on{opacity:1}
@@ -132,6 +134,7 @@ p.sub{color:var(--muted);font-size:16px;line-height:1.55;max-width:34ch;margin:1
 
 <!-- 4. Le final -->
 <section class="scene" id="final"><div class="inner">
+  <div id="three"></div>
   <div class="age" id="ageLine"></div>
   <h1>Buon<br><em>compleanno</em><br><span class="nm">Angelo</span></h1>
   <p class="sub" style="margin-top:12px">Joyeux anniversaire · Happy birthday</p>
@@ -156,6 +159,7 @@ const CONFIG = {
 };
 /* ================================================================ */
 
+window.CONFIG_AGE = CONFIG.age;
 const $ = s => document.querySelector(s);
 document.querySelectorAll(".nm").forEach(e => e.textContent = CONFIG.name);
 
@@ -186,15 +190,22 @@ function confetti(n=160){
   for (let i=0;i<n;i++) parts.push({x:Math.random()*W,y:-20-Math.random()*H*.5,vx:(Math.random()-.5)*2,vy:Math.random()*2+2,
     life:1.6,c:COLORS[Math.random()*COLORS.length|0],sz:Math.random()*6+4,rot:Math.random()*6,vr:(Math.random()-.5)*.3,g:.02,type:"conf"});
 }
+function cannon(n=90){
+  for (const side of [0,1]) for (let i=0;i<n;i++){ const a = (side? -Math.PI*.62 : -Math.PI*.38) + (Math.random()-.5)*.5, sp = Math.random()*12+9;
+    parts.push({x:side?W+10:-10,y:H*.95,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1.8,c:COLORS[Math.random()*COLORS.length|0],
+      sz:Math.random()*7+4,rot:Math.random()*6,vr:(Math.random()-.5)*.4,g:.18,drag:.975,type:"conf"}); }
+}
 function rocket(){ rockets.push({x:W*(.15+Math.random()*.7),y:H,vy:-(Math.random()*3+9),tY:H*(.15+Math.random()*.3)}); }
 let show = 0;
-function fireworks(sec=7){ show = performance.now() + sec*1000; confetti(); }
+let rain = 0;
+function fireworks(sec=7){ show = performance.now() + sec*1000; rain = show + 4000; confetti(260); cannon(); setTimeout(()=>cannon(70), 1400); }
 
 function loop(t){
   cx.clearRect(0,0,W,H);
   for (const s of stars){ cx.globalAlpha = .35+.35*Math.sin(t/900+s.t); cx.fillStyle="#fff";
     cx.beginPath(); cx.arc(s.x*W,s.y*H,s.r,0,7); cx.fill(); }
-  if (t < show && Math.random() < .06) rocket();
+  if (t < show && Math.random() < .07) rocket();
+  if (t < rain && parts.length < 900) confetti(3);
   for (let i=rockets.length-1;i>=0;i--){ const r=rockets[i]; r.y+=r.vy; r.vy*=.985;
     cx.globalAlpha=1; cx.fillStyle="#ffe9b0"; cx.beginPath(); cx.arc(r.x,r.y,2,0,7); cx.fill();
     if (r.y<=r.tY || r.vy>-2){ burst(r.x,r.y,110); rockets.splice(i,1); } }
@@ -202,7 +213,7 @@ function loop(t){
     p.vy+=p.g; p.x+=p.vx; p.y+=p.vy;
     if (p.type==="spark"){ p.vx*=.98; p.vy*=.98; p.life-=.012; cx.globalAlpha=Math.max(p.life,0); cx.fillStyle=p.c;
       cx.beginPath(); cx.arc(p.x,p.y,p.sz,0,7); cx.fill(); }
-    else { p.rot+=p.vr; p.life-=.004; cx.globalAlpha=Math.min(1,p.life); cx.save(); cx.translate(p.x,p.y); cx.rotate(p.rot);
+    else { if (p.drag){ p.vx*=p.drag; if (p.vy<0) p.vy*=p.drag; else p.vy=Math.min(p.vy,3.2); } p.rot+=p.vr; p.life-=.004; cx.globalAlpha=Math.min(1,p.life); cx.save(); cx.translate(p.x,p.y); cx.rotate(p.rot);
       cx.fillStyle=p.c; cx.fillRect(-p.sz/2,-p.sz/4,p.sz,p.sz/2); cx.restore(); }
     if (p.life<=0 || p.y>H+30) parts.splice(i,1); }
   cx.globalAlpha=1; requestAnimationFrame(loop);
@@ -210,7 +221,7 @@ function loop(t){
 requestAnimationFrame(loop);
 
 /* ---------- 1. Sceau ---------- */
-$("#seal").onclick = e => { vibe(30); burst(innerWidth/2, $("#seal").getBoundingClientRect().top+60, 70, "#ff8fc4"); go("#s2"); };
+$("#seal").onclick = e => { vibe(30); burst(innerWidth/2, $("#seal").getBoundingClientRect().top+60, 90, "#ff8fc4"); confetti(80); go("#s2"); };
 
 /* ---------- 2. Code ---------- */
 const L = CONFIG.code.length; let entry = "", tries = 0;
@@ -228,7 +239,7 @@ function press(k){
   paint(); if (entry.length===L) setTimeout(check, 200);
 }
 function check(){
-  if (entry === CONFIG.code){ vibe([20,40,20]); $("#hint").innerHTML = "Accesso consentito ✓<span class=tr>Accès autorisé · Access granted</span>"; burst(W/2,H/2,120,"#7ff0d4"); setTimeout(()=>go("#s3"),700); startCake(); return; }
+  if (entry === CONFIG.code){ vibe([20,40,20]); $("#hint").innerHTML = "Accesso consentito ✓<span class=tr>Accès autorisé · Access granted</span>"; burst(W/2,H/2,120,"#7ff0d4"); cannon(50); setTimeout(()=>go("#s3"),700); startCake(); return; }
   tries++; dots.classList.remove("bad"); void dots.offsetWidth; dots.classList.add("bad"); vibe([60,40,60]);
   const lines = [["Sbagliato! Riprova 😏","Raté ! Réessaie","Wrong! Try again"],
     ["Ancora no… non ti ricordi la tua età? 😄","Toujours pas… tu as oublié ton âge ?","Still no… forgot your own age?"],
@@ -273,12 +284,91 @@ function finale(){
   vibe([30,60,30,60,200]);
   $("#ageLine").textContent = CONFIG.age + " anni ✦ " + new Date().getFullYear();
   $("#fr").insertAdjacentText("beforeend", CONFIG.fr); $("#en").insertAdjacentText("beforeend", CONFIG.en);
-  go("#final"); fireworks(9);
+  go("#final"); fireworks(9); window.start3D && window.start3D();
   const txt = CONFIG.message, el = $("#letter"); let i = 0;
   setTimeout(function type(){ el.textContent = txt.slice(0, ++i); if (i < txt.length) setTimeout(type, txt[i-1]==="."?260:28);
     else { ["#fr","#en","#sign"].forEach((id,k)=>setTimeout(()=>$(id).classList.add("on"), 400+k*900)); $("#sign").textContent = CONFIG.from; } }, 1600);
 }
-$("#again").onclick = () => fireworks(6);
+$("#again").onclick = () => { vibe(30); fireworks(6); };
+</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from "three";
+import { FontLoader } from "three/addons/loaders/FontLoader.js";
+import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+
+const box = document.getElementById("three");
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.35;
+box.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), .04).texture;
+const cam = new THREE.PerspectiveCamera(40, 1, .1, 100); cam.position.set(0, 0, 9);
+scene.add(new THREE.AmbientLight(0xffffff, .4));
+const key = new THREE.PointLight(0xffd27a, 60, 30); key.position.set(3, 3, 5); scene.add(key);
+const rim = new THREE.PointLight(0xff6fb5, 50, 30); rim.position.set(-4, -1, 3); scene.add(rim);
+
+const group = new THREE.Group(); scene.add(group);
+const gold = new THREE.MeshStandardMaterial({ color: 0xffd86b, metalness: 1, roughness: .18, envMapIntensity: 1.6 });
+new FontLoader().load("https://cdn.jsdelivr.net/npm/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json", font => {
+  const g = new TextGeometry(String(window.CONFIG_AGE || 60), { font, size: 2.4, height: .7, curveSegments: 10,
+    bevelEnabled: true, bevelThickness: .12, bevelSize: .07, bevelSegments: 5 });
+  g.center(); group.add(new THREE.Mesh(g, gold));
+});
+
+// Ballons
+const cols = [0xff6fb5, 0x8b7bff, 0xffd27a, 0x7ff0d4, 0xff9a3c];
+const balloonGeo = new THREE.SphereGeometry(.42, 32, 24); balloonGeo.scale(1, 1.18, 1);
+const balloons = [];
+for (let i = 0; i < 14; i++) {
+  const m = new THREE.MeshPhysicalMaterial({ color: cols[i % cols.length], roughness: .25, clearcoat: 1, clearcoatRoughness: .1 });
+  const b = new THREE.Group(); b.add(new THREE.Mesh(balloonGeo, m));
+  const str = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -.5, 0), new THREE.Vector3(.05, -1.4, 0)]),
+    new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: .4 }));
+  b.add(str);
+  const side = i % 2 ? 1 : -1;
+  b.userData = { x: side * (2.2 + Math.random() * 2.2), z: -1.5 - Math.random() * 3, sp: .5 + Math.random() * .6, ph: Math.random() * 6, off: Math.random() * 14 };
+  b.position.set(b.userData.x, -6, b.userData.z);
+  scene.add(b); balloons.push(b);
+}
+
+// Paillettes 3D
+const sparkGeo = new THREE.BufferGeometry(), N = 220, pos = new Float32Array(N * 3);
+for (let i = 0; i < N * 3; i++) pos[i] = (Math.random() - .5) * 12;
+sparkGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+const sparks = new THREE.Points(sparkGeo, new THREE.PointsMaterial({ color: 0xffe2a0, size: .05, transparent: true, opacity: .8 }));
+scene.add(sparks);
+
+function size() { const w = box.clientWidth, h = box.clientHeight; if (!w || !h) return; renderer.setSize(w, h); cam.aspect = w / h;
+  cam.position.z = w < h * 1.1 ? 11 : 9; cam.updateProjectionMatrix(); }
+addEventListener("resize", size);
+
+// Glisser pour faire tourner
+let spin = 0, drag = null;
+box.addEventListener("pointerdown", e => drag = e.clientX);
+addEventListener("pointermove", e => { if (drag !== null) { spin += (e.clientX - drag) * .01; drag = e.clientX; } });
+addEventListener("pointerup", () => { if (drag !== null && Math.abs(spin) < .05) spin += 1.2; drag = null; });
+
+let running = false, t0 = 0;
+function frame(t) {
+  if (!running) return;
+  const s = (t - t0) / 1000;
+  const intro = Math.min(1, s / 1.6), e = 1 - Math.pow(1 - intro, 3);
+  group.scale.setScalar(.2 + .8 * e);
+  group.rotation.y = (1 - e) * Math.PI * 2 + Math.sin(s * .8) * .45 + spin;
+  spin *= .96;
+  group.position.y = Math.sin(s * 1.6) * .12;
+  group.rotation.x = Math.sin(s * 1.1) * .08;
+  key.position.x = Math.sin(s) * 4;
+  for (const b of balloons) { const u = b.userData, y = ((s + u.off) * u.sp) % 14 - 6;
+    b.position.set(u.x + Math.sin(s * .9 + u.ph) * .3, y, u.z); b.rotation.z = Math.sin(s + u.ph) * .15; }
+  sparks.rotation.y = s * .05;
+  renderer.render(scene, cam);
+  requestAnimationFrame(frame);
+}
+window.start3D = () => { if (running) return; running = true; setTimeout(() => { size(); t0 = performance.now(); requestAnimationFrame(frame); }, 300); };
 </script>
 </body>
 </html>
